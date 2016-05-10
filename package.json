@@ -1,5 +1,5 @@
 {
-  "name": "myapp",
+  "name": "Speech-Recognition",
   "version": "1.0.0",
   "description": "A repo with code about how to make simple Netbeast apps.",
   "main": "server.js",
@@ -26,7 +26,9 @@
     "netbeast",
     "netbeast.co"
   ],
-  "author": "your@email.com",
+
+  "logo": "public/img/logo.png",
+  "author": "htmael@gmail.com",
   "license": "AGPL-3.0",
   "bugs": {
     "url": "https://github.com/netbeast-co/get-started/issues"

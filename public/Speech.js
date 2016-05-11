@@ -1,10 +1,14 @@
+require('dotenv').load() // carga variables de entorno
+process.env.NETBEAST = 'localhost:8000'
+var netbeast = require('netbeast')
+
 window.SpeechRecognition = window.SpeechRecognition ||
                            window.webkitSpeechRecognition ||
                            window.mozSpeechRecognition ||
                            window.msSpeechRecognition ||
                            window.oSpeechRecognition ||
                             null
-var require
+
 if (window.SpeechRecognition === null) {
   document.getElementById('ws-unsupported').classList.remove('hidden')
   document.getElementById('button-onoff').setAttribute('disabled', 'disabled')
@@ -27,15 +31,20 @@ if (window.SpeechRecognition === null) {
         transcription.textContent += event.results[i][0].transcript
       }
     }
-    console.log(event.results[i][0].transcris)
   }
 
   // Listen for errors
   recognizer.onerror = function (event) {
     log.innerHTML = 'Recognition error: ' + event.message + '<br />' + log.innerHTML
   }
-
   document.getElementById('button-onoff').addEventListener('click', function () {
+    netbeast('lights').set({color: '#FF0080'})
+    .then(function (data) {
+      transcription.textContent = data
+    })
+    .catch(function (data) {
+      transcription.textContent = data
+    })
     // Set if we need interim results
     recognizer.interimResults = 'interim'
     if (aux === 0) {

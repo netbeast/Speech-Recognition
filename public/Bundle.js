@@ -1,57 +1,42 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
   var netbeast = require('netbeast')
 
-window.SpeechRecognition = window.SpeechRecognition ||
+  window.SpeechRecognition = window.SpeechRecognition ||
                            window.webkitSpeechRecognition ||
                            window.mozSpeechRecognition ||
                            window.msSpeechRecognition ||
                            window.oSpeechRecognition ||
                             null
 
-if (window.SpeechRecognition === null) {
-  document.getElementById('ws-unsupported').classList.remove('hidden')
-  document.getElementById('button-onoff').setAttribute('disabled', 'disabled')
-} else {
-  var recognizer = new window.SpeechRecognition()
-  var transcription = document.getElementById('texto')
-  var log = document.getElementById('log')
+  if (window.SpeechRecognition === null) {
+    document.getElementById('ws-unsupported').classList.remove('hidden')
+    document.getElementById('button-onoff').setAttribute('disabled', 'disabled')
+  } else {
+    var recognizer = new window.SpeechRecognition()
+    var transcription = document.getElementById('texto')
+    var log = document.getElementById('log')
 
-  var aux = 1
-  recognizer.continuous = true
+    var aux = 1
+    recognizer.continuous = true
 
   // Start recognising
-  recognizer.onresult = function (event) {
-    transcription.textContent = ''
+    recognizer.onresult = function (event) {
+      transcription.textContent = ''
 
-    for (var i = event.resultIndex; i < event.results.length; i++) {
-      if (event.results[i].isFinal) {
-        transcription.textContent = event.results[i][0].transcript
-        var aux= event.results[i][0].transcript
-        if(aux.search('set') !== -1)
-        {
-        if(aux.search('pink') !== -1)
-        {
-        netbeast('lights').set({color: '#F00080'})
-        .then(function (data) {
-         console.log(data.body)
+      for (var i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          transcription.textContent = event.results[i][0].transcript
+          var aux = event.results[i][0].transcript
+          var colora = analyze(aux)
+          netbeast(colora[0]).set(colora[1])
+          .then(function (data) {
+            console.log(data.body)
           })
-        } else if (aux.search('blue') !== -1) {
-          netbeast('lights').set({color: '#0000B3'})
-        .then(function (data) {
-         console.log(data.body)
-        })
-      } else if (aux.search('yellow') !== -1) {
-          netbeast('lights').set({color: '#FFFF00'})
-        .then(function (data) {
-         console.log(data.body)
-        })
+        } else {
+          transcription.textContent += event.results[i][0].transcript
         }
-        }
-      } else {
-        transcription.textContent += event.results[i][0].transcript
       }
     }
-  }
 
   // Listen for errors
   recognizer.onerror = function (event) {
@@ -77,7 +62,42 @@ if (window.SpeechRecognition === null) {
       aux = 0
     }
   })
-}
+  }
+
+  function analyze(cadena) {
+
+    if (cadena.search('light') !== -1)
+    {
+      if (cadena.search('color') !== -1)
+      {
+        var color
+        if (cadena.search('blue') !== -1)
+        {
+          color = '#0000B3'
+        }
+        else if (cadena.search('yellow') !== -1) {
+          color = '#FFFF00'
+        }
+        else if (cadena.search('pink') !== -1) {
+          color = '#F00080'
+        }
+
+        var arg= ['lights', {color: color}]
+      } else if (cadena.search('turn')){
+        var power
+        if (cadena.search('on') !== -1) {
+          power = 'on'
+        } else if (cadena.search('off') !== -1) {
+          power = 'off'
+        }
+        var arg= ['lights', {power: power}]
+      }
+      return arg
+    }
+  }
+
+
+
 },{"netbeast":2}],2:[function(require,module,exports){
 (function (process){
 var Promise = require('bluebird')

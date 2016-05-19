@@ -1,49 +1,48 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-  var netbeast = require('netbeast')
+var netbeast = require('netbeast')
 
-  window.SpeechRecognition = window.SpeechRecognition ||
-                           window.webkitSpeechRecognition ||
-                           window.mozSpeechRecognition ||
-                           window.msSpeechRecognition ||
-                           window.oSpeechRecognition ||
-                            null
+// search if some SpeechRecognition accept the plataform
+window.SpeechRecognition = window.SpeechRecognition ||
+                         window.webkitSpeechRecognition ||
+                         window.mozSpeechRecognition ||
+                         window.msSpeechRecognition ||
+                         window.oSpeechRecognition ||
+                          null
 
-  if (window.SpeechRecognition === null) {
-    document.getElementById('ws-unsupported').classList.remove('hidden')
-    document.getElementById('button-onoff').setAttribute('disabled', 'disabled')
-  } else {
-    var recognizer = new window.SpeechRecognition()
-    var transcription = document.getElementById('texto')
-    var log = document.getElementById('log')
+// If any plataform doesnt accept SpeechRecognition, then desactivate button
+if (window.SpeechRecognition === null) {
+  document.getElementById('ws-unsupported').classList.remove('hidden')
+  document.getElementById('button-onoff').setAttribute('disabled', 'disabled')
+} else {
+  var recognizer = new window.SpeechRecognition()
+  var transcription = document.getElementById('texto')
+  var log = document.getElementById('log')
+  var aux = 1
+  recognizer.continuous = true
 
-    var aux = 1
-    recognizer.continuous = true
+// Start recognising
+  recognizer.onresult = function (event) {
+    transcription.textContent = ''
 
-  // Start recognising
-    recognizer.onresult = function (event) {
-      transcription.textContent = ''
-
-      for (var i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          transcription.textContent = event.results[i][0].transcript
-          var aux = event.results[i][0].transcript
-          var colora = analyze(aux)
-          netbeast(colora[0]).set(colora[1])
-          .then(function (data) {
-            console.log(data.body)
-          })
-        } else {
-          transcription.textContent += event.results[i][0].transcript
-        }
+    for (var i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        transcription.textContent = event.results[i][0].transcript
+        var aux = event.results[i][0].transcript
+        var args = analyze(aux)
+        alert(args)
+        action(args)
+      } else {
+        transcription.textContent += event.results[i][0].transcript
       }
     }
+  }
 
-  // Listen for errors
+// Listen for errors
   recognizer.onerror = function (event) {
     log.innerHTML = 'Recognition error: ' + event.message + '<br />' + log.innerHTML
   }
   document.getElementById('button-onoff').addEventListener('click', function () {
-    // Set if we need interim results
+  // Set if we need interim results
     recognizer.interimResults = 'interim'
     if (aux === 0) {
       aux = 1
@@ -62,41 +61,62 @@
       aux = 0
     }
   })
-  }
+}
 
-  function analyze(cadena) {
-
-    if (cadena.search('light') !== -1)
-    {
-      if (cadena.search('color') !== -1)
-      {
+function analyze (cadena) {
+  var app
+  var method
+  if (cadena.search('set') !== -1) {
+    method = 'set'
+    if (cadena.search('light') !== -1) {
+      app = 'lights'
+      if (cadena.search('color') !== -1) {
         var color
-        if (cadena.search('blue') !== -1)
-        {
+        if (cadena.search('blue') !== -1) {
           color = '#0000B3'
-        }
-        else if (cadena.search('yellow') !== -1) {
+        } else if (cadena.search('yellow') !== -1) {
           color = '#FFFF00'
-        }
-        else if (cadena.search('pink') !== -1) {
+        } else if (cadena.search('pink') !== -1) {
           color = '#F00080'
         }
-
-        var arg= ['lights', {color: color}]
-      } else if (cadena.search('turn')){
+        var arg = [method, app, {color: color}]
+      } else if (cadena.search('power') !== -1) {
         var power
-        if (cadena.search('on') !== -1) {
-          power = 'on'
-        } else if (cadena.search('off') !== -1) {
-          power = 'off'
+        if (cadena.search('on')) {
+          power = 1
+        } else if (cadena.search('off')) {
+          power = 0
         }
-        var arg= ['lights', {power: power}]
+        var arg = [method, app, {power: power}]
       }
-      return arg
+    } else if ((cadena.search('switch') !== -1) || (cadena.search('bridge') !== -1)) {
+      app = 'switch'
+      if (cadena.search('power') !== -1) {
+        var power
+        if (cadena.search('on')) {
+          power = 1
+        } else if (cadena.search('off')) {
+          power = 0
+        }
+        var arg = [method, app, {power: power}]
+      }
     }
   }
 
+  return arg
+}
 
+function action (args) {
+  switch (args[0]) {
+    case 'set':
+      netbeast(args[1]).set(args[2])
+      .then(function (data) {
+        console.log(data.body)
+      })
+      break
+    default:
+  }
+}
 
 },{"netbeast":2}],2:[function(require,module,exports){
 (function (process){

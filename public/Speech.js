@@ -2,8 +2,8 @@ var netbeast = require('netbeast')
 
 // search if some SpeechRecognition accept the plataform
 window.SpeechRecognition = window.SpeechRecognition ||
-                         window.webkitSpeechRecognition ||
                          window.mozSpeechRecognition ||
+                         window.webkitSpeechRecognition ||
                          window.msSpeechRecognition ||
                          window.oSpeechRecognition ||
                           null
@@ -65,6 +65,8 @@ if (window.SpeechRecognition === null) {
 function analyze (cadena) {
   var app
   var method
+  var number = -1
+  var arg
   if (cadena.search('set') !== -1) {
     method = 'set'
     if (cadena.search('light') !== -1) {
@@ -78,7 +80,7 @@ function analyze (cadena) {
         } else if (cadena.search('pink') !== -1) {
           color = '#F00080'
         }
-        var arg = [method, app, {color: color}]
+        arg = [method, app, {color: color}]
       } else if (cadena.search('power') !== -1) {
         var power
         if (cadena.search('on')) {
@@ -86,19 +88,28 @@ function analyze (cadena) {
         } else if (cadena.search('off')) {
           power = 0
         }
-        var arg = [method, app, {power: power}]
+        arg = [method, app, {power: power}]
+      } else {
+        if (cadena.search('hue')) {
+          number = 0
+        } else if (cadena.search('saturation')) {
+          number = 1
+        } else if (cadena.search('brightness')) {
+          number = 2
+        }
+        arg = [method, app, number]
       }
     } else if ((cadena.search('switch') !== -1) || (cadena.search('bridge') !== -1)) {
-      app = 'switch'
+      app = (cadena.search('switch') !== -1) ? 'switch' : 'bridge'
       if (cadena.search('power') !== -1) {
-        var power
         if (cadena.search('on')) {
           power = 1
         } else if (cadena.search('off')) {
           power = 0
         }
-        var arg = [method, app, {power: power}]
+        arg = [method, app, {power: power}]
       }
+    } else if ((cadena.search('music') !== -1) || (cadena.search('video') !== -1)) {
     }
   }
 

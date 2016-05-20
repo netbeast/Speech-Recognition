@@ -27,10 +27,11 @@ if (window.SpeechRecognition === null) {
     for (var i = event.resultIndex; i < event.results.length; i++) {
       if (event.results[i].isFinal) {
         transcription.textContent = event.results[i][0].transcript
-        var aux = event.results[i][0].transcript
-        var args = analyze(aux)
-        alert(args)
-        action(args)
+        var auxi = event.results[i][0].transcript
+        var args = analyze(auxi)
+        if (args(3) < 0) {
+          action(args)
+        }
       } else {
         transcription.textContent += event.results[i][0].transcript
       }

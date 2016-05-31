@@ -1,7 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 // search if some SpeechRecognition accept the plataform
 var netbeast = require('netbeast')
-var fs = require('fs')
 window.SpeechRecognition = window.SpeechRecognition ||
                          window.mozSpeechRecognition ||
                          window.webkitSpeechRecognition ||
@@ -35,14 +34,19 @@ if (window.SpeechRecognition === null) {
         transcription.innerHTML = text
         var auxi = event.results[i][0].transcript
         if (controller === 0) {
-           args = analyze(auxi)
-          if (args[2] >= 0) {
+          args = analyze(auxi)
+          if (typeof args[2] == 'number') {
             controller = 1
-            text += 'A cuanto quieres cambiar el porcentaje ?<br>'
+            text += '     R.- What percent do you want to change it?<br>'
             transcription.innerHTML = text
-          } else {
+          } else if (args[3] === 1) {
+            text += '     R.- Setting ' + args[1] + ' to the following property:  ' + args[4] + '<br>'
+            transcription.innerHTML = text
             controller = 0
             action(args)
+          } else {
+            text += '     R.- I dont understand what you mean.<br>'
+            transcription.innerHTML = text
           }
         } else {
         // transformar numero en entero, decir que porcentaje quieres cambiarlo.
@@ -103,7 +107,9 @@ function analyze (cadena) {
   var app
   var method
   var number = -1
+  var action = 0
   var arg
+  var property
   if (cadena.search('light') !== -1) {
     app = 'lights'
     if (cadena.search('change') !== -1) {
@@ -111,12 +117,26 @@ function analyze (cadena) {
         var color
         if (cadena.search('blue') !== -1) {
           color = '#0000B3'
+          property = 'color blue'
+          action = 1
         } else if (cadena.search('yellow') !== -1) {
           color = '#FFFF00'
+          property = 'color yellow'
+          action = 1
         } else if (cadena.search('pink') !== -1) {
           color = '#F00080'
+          property = 'color pink'
+          action = 1
+        } else if (cadena.search('green') !== -1) {
+          color = '#37FF00'
+          property = 'color green'
+          action = 1
+        } else if (cadena.search('white') !== -1) {
+          color = '#FFFFFF'
+          property = 'color white'
+          action = 1
         }
-        arg = ['set', app, {color: color}]
+        arg = ['set', app, {color: color}, action, property]
       } else {
         if (cadena.search('hue') !== -1) {
           number = 0
@@ -129,12 +149,16 @@ function analyze (cadena) {
       }
     } else if (cadena.search('turn') !== -1) {
       var power
-      if (cadena.search('on')) {
+      if (cadena.search('on')  !== -1) {
         power = 1
-      } else if (cadena.search('off')) {
+        property = 'power on'
+        action = 1
+      } else if (cadena.search('off') !== -1) {
         power = 0
+        property = 'power off'
+        action = 1
       }
-      arg = ['set', app, {power: power}]
+      arg = ['set', app, {power: power}, action, property]
     } else if (cadena.search('information') !== -1) {
       arg = ['get', app]
     }
@@ -143,10 +167,14 @@ function analyze (cadena) {
     if (cadena.search('turn') !== -1) {
       if (cadena.search('on')) {
         power = 1
+        property = 'power on'
+        action = 1
       } else if (cadena.search('off')) {
         power = 0
+        property = 'power off'
+        action = 1
       }
-      arg = ['set', app, {power: power}]
+      arg = ['set', app, {power: power}, action, property]
     }else if (cadena.search('information') !== -1) {
       arg = ['get', app]
     }
@@ -159,14 +187,22 @@ function analyze (cadena) {
       var value
       if (cadena.search('play') !== -1) {
         value = 'play'
+        property = 'status play'
+        action = 1
       } else if (cadena.search('pause') !== -1) {
         value = 'pause'
+        property = 'status pause'
+        action = 1
       } else if (cadena.search('stop') !== -1) {
         value = 'stop'
+        property = 'status stop'
+        action = 1
       } else if (cadena.search('info') !== -1) {
         value = 'info'
+        property = 'status info'
+        action = 1
       }
-      arg = ['set', app, {status: value}]
+      arg = ['set', app, {status: value}, action, property]
     } else if (cadena.search('information') !== -1) {
       arg = ['get', app]
     }
@@ -193,7 +229,7 @@ function action (args) {
   }
 }
 
-},{"fs":79,"netbeast":2}],2:[function(require,module,exports){
+},{"netbeast":2}],2:[function(require,module,exports){
 (function (process){
 var Promise = require('bluebird')
 var request = require('superagent-bluebird-promise')

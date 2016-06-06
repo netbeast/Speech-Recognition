@@ -14,9 +14,9 @@ if (window.SpeechRecognition === null) {
 } else {
   var recognizer = new window.SpeechRecognition()
   var transcription = document.getElementById('texto')
-  var contest = document.getElementById('contest')
   var log = document.getElementById('log')
   var aux = 1
+  var hidden = 0
   var controller = 0
   var percent
   var args
@@ -32,42 +32,7 @@ if (window.SpeechRecognition === null) {
         text += event.results[i][0].transcript + '<br>'
         transcription.innerHTML = text
         var auxi = event.results[i][0].transcript
-        if (controller === 0) {
-          args = analyze(auxi)
-          if (typeof args[2] == 'number') {
-            controller = 1
-            text += '     R.- What percent do you want to change it?<br>'
-            transcription.innerHTML = text
-          } else if (args[3] === 1) {
-            text += '     R.- Setting ' + args[1] + ' to the following property:  ' + args[4] + '<br>'
-            transcription.innerHTML = text
-            controller = 0
-            action(args)
-          } else {
-            text += '     R.- I dont understand what you mean.<br>'
-            transcription.innerHTML = text
-          }
-        } else {
-        // transformar numero en entero, decir que porcentaje quieres cambiarlo.
-          percent = parseInt(auxi)
-          switch (args[2]) {
-            case 0:
-              args = [args[0], args[1], {hue: percent}]
-              break
-            case 1:
-              args = [args[0], args[1], {brightness: percent}]
-              break
-            case 2:
-              args = [args[0], args[1], {brightness: percent}]
-              break
-            case 3:
-              args = [args[0], args[1], {volume: percent}]
-              break
-          }
-          action(args)
-          controller = 0
-          contest.textContent = ''
-        }
+        choose(auxi)
       } else {
         transcription.innerHTML = text
         transcription.innerHTML += event.results[i][0].transcript
@@ -100,6 +65,73 @@ if (window.SpeechRecognition === null) {
       aux = 0
     }
   })
+
+  document.getElementById('taketext').addEventListener('click', function () {
+    if (hidden === 1) {
+      text += document.getElementById('form').value + '<br>'
+      transcription.innerHTML = text
+      choose(document.getElementById('form').value)
+        document.getElementById('form').style.visibility = 'hidden'
+      hidden = 0
+    } else {
+      document.getElementById('form').style.visibility = 'visible'
+      hidden = 1
+    }
+  })
+}
+
+function choose (auxi) {
+  if (controller === 0) {
+    args = analyze(auxi)
+    if (args[0] !== 'empty') {
+      if (typeof args[2] === 'number') {
+        controller = 1
+        text += '     R.- What percent do you want to change it?<br>'
+        transcription.innerHTML = text
+      } else if (args[3] === 1) {
+        text += '     R.- Setting ' + args[1] + ' to the following property:  ' + args[4] + '<br>'
+        transcription.innerHTML = text
+        controller = 0
+        action(args)
+      } else if (args[0] === 'get') {
+        controller = 0
+        action(args)
+      } else {
+        text += '     R.- I dont understand what you mean.<br>'
+        transcription.innerHTML = text
+      }
+    } else {
+      text += 'R.- I dont understand what you mean.<br>'
+      transcription.innerHTML = text
+    }
+  } else {
+  // transformar numero en entero, decir que porcentaje quieres cambiarlo.
+    percent = parseInt(auxi)
+    switch (args[2]) {
+      case 0:
+        args = [args[0], args[1], {hue: percent}, 'hue to ' + percent + ' %']
+        break
+      case 1:
+        args = [args[0], args[1], {saturation: percent}, 'saturation to ' + percent + ' %']
+        break
+      case 2:
+        args = [args[0], args[1], {brightness: percent}, 'brightness to ' + percent + ' %']
+        break
+      case 3:
+        args = [args[0], args[1], {volume: percent}, 'volume to ' + percent + ' %']
+        break
+    }
+    if (isNaN(percent) === false) {
+      text += '     R.- Setting ' + args[1] + ' to the following property:  ' + args[3] + '<br>'
+      transcription.innerHTML = text
+      action(args)
+      controller = 0
+    } else {
+      text += '     R.- You must tell me a number <br>'
+      transcription.innerHTML = text
+      controller = 0
+    }
+  }
 }
 
 function analyze (cadena) {
@@ -205,6 +237,8 @@ function analyze (cadena) {
     } else if (cadena.search('information') !== -1) {
       arg = ['get', app]
     }
+  } else {
+    arg = ['empty']
   }
   return arg
 }
@@ -220,7 +254,40 @@ function action (args) {
     case 'get':
       netbeast(args[1]).get()
       .then(function (data) {
-        console.log(data.body)
+        switch (data[0].topic) {
+          case 'lights':
+            text += '     R.- Light information: <br>'
+            text += '     R.-   Power:' + data[0].result.power + '<br>'
+            text += '     R.-   Hue:' + data[0].result.hue + '<br>'
+            text += '     R.-   Saturation:' + data[0].result.saturation + '<br>'
+            text += '     R.-   Brightness:' + data[0].result.brightness + '<br>'
+            break
+          case 'switch':
+            text += '     R.- Switch information: <br>'
+            text += '     R.-   Power:' + data[0].power + '<br>'
+
+            break
+          case 'bridge':
+            text += '     R.- Bridge information: <br>'
+            text += '     R.-   Power:' + data[0].power + '<br>'
+
+            break
+          case 'music':
+            text += '     R.- Music information: <br>'
+            text += '     R.-   Volume:' + data[0].volume + '<br>'
+            text += '     R.-   Status:' + data[0].status + '<br>'
+
+            break
+          case 'video':
+            text += '     R.- Video information: <br>'
+            text += '     R.-   Volume:' + data[0].volume + '<br>'
+            text += '     R.-   Status:' + data[0].status + '<br>'
+
+            break
+          default:
+            transcription.innerHTML = text
+
+        }
       })
       break
 
